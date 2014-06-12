@@ -1,0 +1,2 @@
+Export plugin Softimage to Mitsuba renderer.
+v1.0
