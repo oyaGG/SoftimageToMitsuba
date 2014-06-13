@@ -321,10 +321,10 @@ namespace Mitsuba
 		{
 			//app.LogMessage(L"cref shader: " + source.GetAsText());
 			XSI::Shader paramShader(param.GetParent());
-			XSI::Shader mShader = FindShaderOnPort(paramShader.GetShaders(), param.GetName(), false);
+			XSI::Shader mShader = FindShaderOnPort(paramShader, param.GetName(), false);
 			if (mShader.IsValid())
 			{
-				//app.LogMessage(L"Find shader: " + mShader.GetName());
+				//app.LogMessage(L"WriteTextureOrSpectrum! Find shader: " + mShader.GetName() + L", on param: " + param.GetName());
 				if (Constants::NameInList(Constants::textureTypeArray, mShader.GetParameterValue(Constants::mShaderType).GetAsText().GetAsciiString()))
 				{
 					//app.LogMessage(L"WriteTextureOrSpectrum 2! param in texturelist");
@@ -332,18 +332,22 @@ namespace Mitsuba
 				}
 				else if (ShaderIsImageType(mShader))
 				{
-					//app.LogMessage(L"WriteTextureOrSpectrum 3! shader is Image: " + mShader.GetName());
-					//app.LogMessage(L"WriteTextureOrSpectrum 33! textures count: " + CString(mShader.GetImageClips().GetCount()));
-					root = GenerateTextureSegment(doc, mShader, pName);
+					XSI::ImageClip2 mImage = FindImageClipOnPort(mShader, Constants::paramTex);
+					if (mImage.IsValid())
+					{
+						//app.LogMessage(L"WriteTextureOrSpectrum 3! shader is Image: " + mShader.GetName());
+						//app.LogMessage(L"WriteTextureOrSpectrum 33! textures count: " + CString(mShader.GetImageClips().GetCount()));
+						root = GenerateTextureSegment(doc, mShader, pName);
+					}
+					else app.LogMessage(L"WriteTextureOrSpectrum! Param " + param.GetName() + L" - ImageClip not found!  ImageClip: " + mImage.GetName(), siWarningMsg);
 				}
-				else
-				{
-					app.LogMessage(L"WriteTextureOrSpectrum! shader is wrong");
-				}
+				else app.LogMessage(L"WriteTextureOrSpectrum! Shader is not Image: " + mShader.GetName(), siWarningMsg);
 			}
+			else app.LogMessage(L"WriteTextureOrSpectrum! Param " + param.GetName() + L" - shader not found!", siWarningMsg);
 		}
+		else app.LogMessage(L"WriteTextureOrSpectrum! Param " + param.GetName() + L" have not source!", siWarningMsg);
 
-		if (root == nullptr) root = GenerateSpectrumSegment(doc, param);
+		if (root == nullptr) root = WriteSpectrumSegment(doc, param);
 
 		return root;
 	}
@@ -358,7 +362,7 @@ namespace Mitsuba
 		{
 			//app.LogMessage(L"cref shader: " + source.GetAsText());
 			XSI::Shader paramShader(param.GetParent());
-			XSI::Shader mShader = FindShaderOnPort(paramShader.GetShaders(), param.GetName(), false);
+			XSI::Shader mShader = FindShaderOnPort(paramShader, param.GetName(), false);
 			if (mShader.IsValid())
 			{
 				if (ShaderIsImageType(mShader))
@@ -410,7 +414,7 @@ namespace Mitsuba
 
 	XMLElement* Shader::AddChildBsdf(XMLDocument* doc, XSI::Shader& shader, CString pName)
 	{
-		XSI::Shader oShader = FindShaderOnPort(shader.GetShaders(), pName, true);
+		XSI::Shader oShader = FindShaderOnPort(shader, pName, true);
 		if (!oShader.IsValid()) return WriteStandartDiffuse(doc);
 
 		return WriteShader(doc, oShader, L"", false);
@@ -463,8 +467,8 @@ namespace Mitsuba
 		{
 			root->SetAttribute(Constants::attrType, Constants::typeCheckerboard.GetAsciiString());
 
-			root->InsertEndChild(GenerateSpectrumSegment(doc, shader.GetParameter(Constants::paramColor0)));
-			root->InsertEndChild(GenerateSpectrumSegment(doc, shader.GetParameter(Constants::paramColor1)));
+			root->InsertEndChild(WriteSpectrumSegment(doc, shader.GetParameter(Constants::paramColor0)));
+			root->InsertEndChild(WriteSpectrumSegment(doc, shader.GetParameter(Constants::paramColor1)));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramUoffset, shader.GetParameterValue(Constants::paramUoffset).GetAsText()));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramVoffset, shader.GetParameterValue(Constants::paramVoffset).GetAsText()));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramUscale, shader.GetParameterValue(Constants::paramUscale).GetAsText()));
@@ -474,8 +478,8 @@ namespace Mitsuba
 		{
 			root->SetAttribute(Constants::attrType, Constants::typeGridTexture.GetAsciiString());
 
-			root->InsertEndChild(GenerateSpectrumSegment(doc, shader.GetParameter(Constants::paramColor0)));
-			root->InsertEndChild(GenerateSpectrumSegment(doc, shader.GetParameter(Constants::paramColor1)));
+			root->InsertEndChild(WriteSpectrumSegment(doc, shader.GetParameter(Constants::paramColor0)));
+			root->InsertEndChild(WriteSpectrumSegment(doc, shader.GetParameter(Constants::paramColor1)));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramUoffset, shader.GetParameterValue(Constants::paramUoffset).GetAsText()));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramVoffset, shader.GetParameterValue(Constants::paramVoffset).GetAsText()));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramUscale, shader.GetParameterValue(Constants::paramUscale).GetAsText()));
@@ -497,8 +501,8 @@ namespace Mitsuba
 		{
 			root->SetAttribute(Constants::attrType, Constants::typeWireframe.GetAsciiString());
 
-			root->InsertEndChild(GenerateSpectrumSegment(doc, shader.GetParameter(Constants::paramInteriorColor)));
-			root->InsertEndChild(GenerateSpectrumSegment(doc, shader.GetParameter(Constants::paramEdgeColor)));
+			root->InsertEndChild(WriteSpectrumSegment(doc, shader.GetParameter(Constants::paramInteriorColor)));
+			root->InsertEndChild(WriteSpectrumSegment(doc, shader.GetParameter(Constants::paramEdgeColor)));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramLineWidth, shader.GetParameterValue(Constants::paramLineWidth).GetAsText()));
 			root->InsertEndChild(WriteElement(doc, Constants::attrFloat, Constants::paramStepWidth, shader.GetParameterValue(Constants::paramStepWidth).GetAsText()));
 		}
@@ -511,16 +515,10 @@ namespace Mitsuba
 
 		return root;
 	}
-	XMLElement* Shader::GenerateSpectrumSegment(XMLDocument* doc, Parameter& param)
-	{
-		//app.LogMessage(L"Spectrum Segment: param: " + param.GetName());
-		CString color = param.GetParameterValue(L"red").GetAsText() + L", " + param.GetParameterValue(L"green").GetAsText() + L", " + param.GetParameterValue(L"blue").GetAsText();
-		return WriteElement(doc, Constants::attrSpectrum, param.GetName(), color);
-	}
-
+	
 	XMLElement* Shader::GenerateTextureSegment(XMLDocument* doc, XSI::Shader& shader, CString pName)
 	{
-		XSI::ImageClip2 imageClip = FindImageClipOnPort(shader.GetImageClips(), Constants::paramTex);
+		XSI::ImageClip2 imageClip = FindImageClipOnPort(shader, Constants::paramTex);
 		if (!imageClip.IsValid()) return nullptr;
 
 		XMLElement* root = doc->NewElement(Constants::attrTexture);
@@ -581,12 +579,18 @@ namespace Mitsuba
 	{
 		//app.LogMessage(L"Shader: " + shader.GetName() + L", className: " + shader.GetClassIDName() + L", class: " + CString(shader.GetClassID()));
 
-		if (shader.GetClassIDName() != L"Texture") return false;
+		if (shader.GetClassIDName() != L"Texture")
+		{
+			app.LogMessage(L"ShaderIsImageType: shader class is not Texture! " + shader.GetName(), siWarningMsg);
+			return false;
+		}
 
 		Parameter paramTex = shader.GetParameter(L"tex");
-		if (!paramTex.IsValid() || !paramTex.GetSource().IsValid()) return false;
-
-
+		if (!paramTex.IsValid() || !paramTex.GetSource().IsValid())
+		{
+			app.LogMessage(L"ShaderIsImageType: param tex invalid or haven`t source! " + shader.GetName(), siWarningMsg);
+			return false;
+		}
 		
 		return true;
 	}

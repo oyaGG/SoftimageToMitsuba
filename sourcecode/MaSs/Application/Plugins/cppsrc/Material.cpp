@@ -15,7 +15,7 @@ namespace Mitsuba
 
 	void Material::WriteMaterials(XMLDocument* doc, XMLElement* sceneElement, XSI::Material oMat)
 	{
-		XSI::Shader mShader = FindShaderOnPort(oMat.GetShaders(), L"surface", true);
+		XSI::Shader mShader = FindShaderOnPort(oMat, L"surface", true);
 		if (mShader.IsValid())
 		{
 			CString matName;

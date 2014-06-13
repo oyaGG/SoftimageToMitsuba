@@ -72,7 +72,7 @@ public:
 		CString filePath = oProp.GetParameter(L"Path").GetValue();
 		if (filePath.IsEmpty())
 		{
-			app.LogMessage(L"Select Export Path!", siErrorMsg);
+			app.LogMessage(L"Export Path is Empty!", siErrorMsg);
 			return false;
 		}
 
@@ -189,43 +189,43 @@ public:
 				pointCloudsArray = app.GetActiveSceneRoot().FindChildren(L"*", siPointCloudPrimType, CStringArray());
 			}
 		}
-		//else if(source == L"selectedModel")
-		//{
-		//	Selection selection = app.GetSelection();
-		//	CRef selected = selection.GetItem(0);
-		//	X3DObject obj(selected);
-		//	if(isLight)
-		//	{
-		//		lightArray = obj.FindChildren(L"*", siLightPrimType, CStringArray());
-		//	}
+		else if(source == L"selectedModel")
+		{
+			Selection selection = app.GetSelection();
+			CRef selected = selection.GetItem(0);
+			X3DObject obj(selected);
+			if(isLight)
+			{
+				lightArray = obj.FindChildren(L"*", siLightPrimType, CStringArray());
+			}
 
-		//	if(isPolymesh)
-		//	{
-		//		meshArray = obj.FindChildren(L"*", siPolyMeshType, CStringArray());
-		//		surfArray = obj.FindChildren(L"*", siSrfMeshPrimType, CStringArray());
-		//	}
+			if(isPolymesh)
+			{
+				meshArray = obj.FindChildren(L"*", siPolyMeshType, CStringArray());
+				surfArray = obj.FindChildren(L"*", siSrfMeshPrimType, CStringArray());
+			}
 
-		//	if(isPointClouds)
-		//	{
-		//		pointCloudsArray = obj.FindChildren(L"*", siPointCloudPrimType, CStringArray());
-		//	}
-		//}
-		//else if(source == L"selectedObjects")
-		//{
-		//	Selection selection = app.GetSelection();
-		//	CRefArray selected = selection.GetArray();
+			if(isPointClouds)
+			{
+				pointCloudsArray = obj.FindChildren(L"*", siPointCloudPrimType, CStringArray());
+			}
+		}
+		else if(source == L"selectedObjects")
+		{
+			Selection selection = app.GetSelection();
+			CRefArray selected = selection.GetArray();
 
-		//	for(LONG i=0; i < selected.GetCount(); i++)
-		//	{
-		//		X3DObject obj(selected[i]);
-		//		CString stype = obj.GetType();
+			for(LONG i=0; i < selected.GetCount(); i++)
+			{
+				X3DObject obj(selected[i]);
+				CString stype = obj.GetType();
 
-		//		if(stype == L"polymsh" && isPolymesh) meshArray.Add(obj);
-		//		else if(stype == L"surfmsh" && isPolymesh) surfArray.Add(obj);
-		//		else if(stype == L"light" && isLight) lightArray.Add(obj);
-		//		else if(stype == L"pointcloud" && isPointClouds) pointCloudsArray.Add(obj);
-		//	}
-		//}
+				if(stype == L"polymsh" && isPolymesh) meshArray.Add(obj);
+				else if(stype == L"surfmsh" && isPolymesh) surfArray.Add(obj);
+				else if(stype == L"light" && isLight) lightArray.Add(obj);
+				else if(stype == L"pointcloud" && isPointClouds) pointCloudsArray.Add(obj);
+			}
+		}
 
 		if (isLight)
 		{
@@ -271,8 +271,8 @@ public:
 		}
 
 		bar.PutProperty(L"StatusText", L"");
-
-		if(isPointClouds)
+		//TODO
+		/*if(isPointClouds)
 		{
 			bar.PutProperty(L"Maximum", pointCloudsArray.GetCount());
 			bar.PutProperty(L"Value", (LONG)0);
@@ -289,7 +289,7 @@ public:
 				particleCloud->WritePointCloud(doc, sceneElement, pointCloud, shouldExportGeometry, filePath);				
 			}
 			delete particleCloud;
-		}
+		}*/
 
 		bar.PutProperty(L"StatusText", L"");
 

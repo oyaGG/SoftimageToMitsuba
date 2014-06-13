@@ -36,8 +36,7 @@ namespace Mitsuba
 		XMLElement* GenerateMeshSegment(XMLDocument* doc, X3DObject& mesh, bool shouldExport, CString exportPath);
 		bool MeshIsMassPrimitive(X3DObject& mesh);
 
-		void ExportPlyMesh(X3DObject& obj, CString exportPath, CString fileName);
-		void ExportPlyMesh02(X3DObject& obj, CString exportPath, CString fileName);
+		void ExportPlyMesh(X3DObject& obj, CString exportPath, CString fileName, bool isSolid);
 	};
 }
 

@@ -338,7 +338,7 @@ namespace Mitsuba
 			root = doc->NewElement("emitter");
 			root->SetAttribute(Constants::attrType, "envmap");
 
-			XSI::ImageClip2 imageShader = FindImageClipOnPort(shader.GetImageClips(), L"image");
+			XSI::ImageClip2 imageShader = FindImageClipOnPort(shader, L"image");
 			CString filename = imageShader.GetParameterValue(Constants::paramSourceFileName);
 			root->InsertEndChild(WriteElement(doc, Constants::attrString, "filename", filename.GetAsciiString()));
 

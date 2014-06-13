@@ -31,7 +31,6 @@ namespace Mitsuba
 		XMLElement* WriteFloatOrTexture(XMLDocument* doc, Parameter& param, CString name);
 		XMLElement* AddChildBsdf(XMLDocument* doc, XSI::Shader& shader, CString pName);
 		XMLElement* WriteBitmap(XMLDocument* doc, XSI::Shader& shader, CString pName);
-		XMLElement* GenerateSpectrumSegment(XMLDocument* doc, Parameter& param);
 		XMLElement* GenerateTextureSegment(XMLDocument* doc, XSI::Shader& shader, CString pName);
 		XMLElement* WriteVariantSegment(XMLDocument* doc, CValue value);
 		XMLElement* WriteMaterialSegment(XMLDocument* doc, CValue value);

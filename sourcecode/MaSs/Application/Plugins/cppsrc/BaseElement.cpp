@@ -126,16 +126,25 @@ namespace Mitsuba
 		return element;
 	}
 
-	XMLElement* BaseElement::WriteSpectrumElement(XMLDocument* doc, const char* paramName, XSI::Shader& shader)
+	XMLElement* BaseElement::WriteSpectrumSegment(XMLDocument* doc, Parameter& param)
 	{
+		//app.LogMessage(L"Spectrum Segment: param: " + param.GetName());
+		CString color = param.GetParameterValue(L"red").GetAsText() + L", " + param.GetParameterValue(L"green").GetAsText() + L", " + param.GetParameterValue(L"blue").GetAsText();
+		return WriteElement(doc, Constants::attrSpectrum, param.GetName(), color);
+	}
+
+	XMLElement* BaseElement::WriteSpectrumElement(XMLDocument* doc, const char* paramName, XSI::Shader& shader)
+	{	
+		app.LogMessage(L"WriteSpectrumElement: shader: " + shader.GetName() + L", param: " + CString(paramName));
 		XMLElement* spectrumElement = doc->NewElement("spectrum");
 		spectrumElement->SetAttribute(Constants::attrName, paramName);
 
-		Parameter color = shader.GetParameter(L"color");
+		Parameter color = shader.GetParameter(CString(paramName));
+		app.LogMessage(L"WriteSpectrumElement: get color: " + color.GetName());
 		float red = color.GetParameterValue(L"red");
 		float green = color.GetParameterValue(L"green");
 		float blue = color.GetParameterValue(L"blue");
-
+		
 		string svalue3 = FloatToString(red) + ", " + FloatToString(green) + ", " + FloatToString(blue);
 		spectrumElement->SetAttribute(Constants::attrValue, svalue3.c_str());
 
@@ -178,48 +187,65 @@ namespace Mitsuba
 		return  to_string(vector.GetX()) + " " + to_string(vector.GetY()) +" "+ to_string(vector.GetZ());
 	}
 
-	XSI::Shader BaseElement::FindShaderOnPort(CRefArray shaders, CString targetPortName, bool isMShader)
+	XSI::Shader BaseElement::FindShaderOnPort(XSI::Shader& shaderParam, CString targetPortName, bool isMShader)
+	{
+		return FindShaderOnPort(shaderParam.GetShaders(), targetPortName, isMShader);
+	}
+
+	XSI::Shader BaseElement::FindShaderOnPort(XSI::Material& mat, CString targetPortName, bool isMShader)
+	{
+		return FindShaderOnPort(mat.GetShaders(), targetPortName, isMShader);
+	}
+
+	XSI::Shader BaseElement::FindShaderOnPort(CRefArray& shaders, CString targetPortName, bool isMShader)
 	{
 		//app.LogMessage(L"Shaders count: " + CString(shaders.GetCount()));
 		XSI::Shader mShader;
 		for (long j = 0; j < shaders.GetCount(); j++)
 		{
 			XSI::Shader lShader(shaders[j]);
-			Parameter lTarget = lShader.GetShaderParameterTargets(L"out")[0];
-			if (lTarget.GetName().IsEqualNoCase(targetPortName))
+			CRefArray lTargets = lShader.GetShaderParameterTargets(L"out");
+			for (int i = 0; i < lTargets.GetCount(); i++)
 			{
-				if (isMShader)
+				Parameter lTarget(lTargets.GetItem(i));
+				//app.LogMessage(L"FindShaderOnPort: Target on port: " + lTarget.GetName());
+				if (lTarget.GetName().IsEqualNoCase(targetPortName))
 				{
-					Parameter oParam = lShader.GetParameter(Constants::mShaderType);
-					if (oParam.IsValid())
+					if (isMShader)
+					{
+						Parameter oParam = lShader.GetParameter(Constants::mShaderType);
+						if (oParam.IsValid())
+						{
+							mShader = lShader;
+							break;
+						}
+					}
+					else
 					{
 						mShader = lShader;
 						break;
 					}
-				}
-				else
-				{
-					mShader = lShader;
-					break;
 				}
 			}
 		}
 
 		return mShader;
 	}
-
-	XSI::ImageClip2 BaseElement::FindImageClipOnPort(CRefArray imageclips, CString targetPortName)
+	
+	XSI::ImageClip2 BaseElement::FindImageClipOnPort(XSI::Shader& shaderParam, CString targetPortName)
 	{
-		//app.LogMessage(L"Textures count: " + CString(imageclips.GetCount()));
+		//app.LogMessage(L"FindImageClipOnPort: targetPortName: " + targetPortName);
+
+		CRefArray imageclips = shaderParam.GetImageClips();
 		XSI::ImageClip2 imageClip;
 		for (long j = 0; j < imageclips.GetCount(); j++)
 		{
 			XSI::ImageClip2 lImageClip(imageclips[j]);
+			
 			Parameter lTarget = lImageClip.GetShaderParameterTargets()[0];
-
-			//app.LogMessage(L"Shader on port: " + lImageClip.GetName());
 			if (lTarget.GetName().IsEqualNoCase(targetPortName))
 			{
+				//app.LogMessage(L"FindImageClipOnPort: image found!");
 				imageClip = lImageClip;
 				break;
 			}

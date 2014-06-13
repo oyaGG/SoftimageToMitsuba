@@ -63,62 +63,32 @@ namespace Mitsuba
 					subLevel = prop.GetParameterValue(L"subLevel");
 				}
 
-				if (isSolid)
+				if (!isSubdivide)
 				{
-					if (!isSubdivide)
-					{
-						ExportPlyMesh02(mesh, exportPath, mesh.GetFullName() + L".ply");
-					}
-					else
-					{
-						/*#we should subdivide this mesh and then export
-						#lm("We should subdivide the mesh")
-						subOps = ap.ApplyOp("MeshSubdivideWithCenter", mesh)
-						subMesh = ap.Selection(0)
-						subOp = subOps(0)
-						ap.SetValue(subOp.SubdivisionDepth, subLevel)
-						ap.FreezeObj(subMesh, "", "")
-
-						tM = mesh.Kinematics.Global.Transform.Matrix4
-						oTrans = subMesh.Kinematics.Global.Transform
-						tM.InvertInPlace()
-						oTrans.SetMatrix4(tM)
-						subMesh.Kinematics.Global.Transform = oTrans
-						ap.ResetTransform(subMesh, "siCtr", "siSRT", "siXYZ")
-
-						ExportPlyMesh02(subMesh, exportPath, mesh.FullName + ".ply")
-						ap.DeleteObj(subMesh)*/
-					}
+					ExportPlyMesh(mesh, exportPath, mesh.GetFullName() + L".ply", isSolid);
 				}
 				else
 				{
-					if (!isSubdivide)
-					{
-						ExportPlyMesh(mesh, exportPath, mesh.GetFullName() + L".ply");
-					}
-					else
-					{
-						/*subOps = ap.ApplyOp("MeshSubdivideWithCenter", mesh)
-						subMesh = ap.Selection(0)
-						subOp = subOps(0)
-						ap.SetValue(subOp.SubdivisionDepth, subLevel)
-						ap.TransferAllPropertiesAcrossGenOp(subOp, subMesh, "", True, "")
+					/*#we should subdivide this mesh and then export
+					#lm("We should subdivide the mesh")
+					subOps = ap.ApplyOp("MeshSubdivideWithCenter", mesh)
+					subMesh = ap.Selection(0)
+					subOp = subOps(0)
+					ap.SetValue(subOp.SubdivisionDepth, subLevel)
+					ap.FreezeObj(subMesh, "", "")
 
-						ap.FreezeObj(subMesh, "", "")
-						tM = mesh.Kinematics.Global.Transform.Matrix4
-						oTrans = subMesh.Kinematics.Global.Transform
-						tM.InvertInPlace()
-						oTrans.SetMatrix4(tM)
-						subMesh.Kinematics.Global.Transform = oTrans
-						ap.ResetTransform(subMesh, "siCtr", "siSRT", "siXYZ")
+					tM = mesh.Kinematics.Global.Transform.Matrix4
+					oTrans = subMesh.Kinematics.Global.Transform
+					tM.InvertInPlace()
+					oTrans.SetMatrix4(tM)
+					subMesh.Kinematics.Global.Transform = oTrans
+					ap.ResetTransform(subMesh, "siCtr", "siSRT", "siXYZ")
 
-						ExportPlyMesh(subMesh, exportPath, mesh.FullName + ".ply")
-						ap.DeleteObj(subMesh)*/
-					}
+					ExportPlyMesh02(subMesh, exportPath, mesh.FullName + ".ply")
+					ap.DeleteObj(subMesh)*/
 				}
 			}
 		}
-
 
 		return root;
 	}
@@ -146,91 +116,101 @@ namespace Mitsuba
 		return false;
 	}
 
-	void Mesh::ExportPlyMesh(X3DObject& obj, CString exportPath, CString fileName)
+	void Mesh::ExportPlyMesh(X3DObject& obj, CString exportPath, CString fileName, bool isSolid)
 	{
 		ofstream f(CUtils::BuildPath(exportPath, fileName).GetAsciiString(), ios::out | ios::binary);
 
-		f << "ply\n";
-		f << "format ascii 1.0\n";
+		f << "ply" << endl;
+		f << "format ascii 1.0" << endl;
 
 		Geometry oGeom = obj.GetActivePrimitive().GetGeometry();
 		CTriangleRefArray tris = oGeom.GetTriangles();
 		int vertexcount = tris.GetCount() * 3;
-		f << "element vertex " + to_string(vertexcount) + "\n";
-		f << "property float32 x\n";
-		f << "property float32 y\n";
-		f << "property float32 z\n";
+		f << "element vertex " + to_string(vertexcount) << endl;
+		f << "property float32 x" << endl;
+		f << "property float32 y" << endl;
+		f << "property float32 z" << endl;
 
-		f << "property float32 nx\n";
-		f << "property float32 ny\n";
-		f << "property float32 nz\n";
+		if (!isSolid)
+		{
+			f << "property float32 nx" << endl;
+			f << "property float32 ny" << endl;
+			f << "property float32 nz" << endl;
+		}
 
 		CGeometryAccessor ga = PolygonMesh(oGeom).GetGeometryAccessor();
 		CRefArray sUVs = ga.GetUVs();
-		if (sUVs.GetCount() > 0)
+		LONG uvCount = sUVs.GetCount();
+
+		ClusterProperty uvProp;
+		CFloatArray uvValues;
+
+		if (!isSolid && uvCount > 0)
 		{
-			f << "property float32 s\n";
-			f << "property float32 t\n";
+			uvProp = sUVs[0];
+			uvProp.GetValues(uvValues);
+
+			f << "property float32 s" << endl;
+			f << "property float32 t" << endl;
 		}
 
 		CTriangleRefArray triangles = obj.GetActivePrimitive().GetGeometry().GetTriangles();
 		int trianglecount = triangles.GetCount();
-		f << "element face " + to_string(trianglecount) + "\n";
-		f << "property list uint8 int32 vertex_index\n";
-		f << "end_header\n";
+		f << "element face " + to_string(trianglecount) << endl;
+		f << "property list uint8 int32 vertex_index" << endl;
+		f << "end_header" << endl;
 
 		//app.LogMessage(L"Tris Count: " + CString(triangles.GetCount()));
 
 		CLongArray triNodeIds;
 		ga.GetTriangleNodeIndices(triNodeIds);
 
-
 		for (int i = 0; i < triangles.GetCount(); i++)
 		{
 			XSI::Triangle triangle(triangles.GetItem(i));
-
 			for (int j = 2; j >= 0; j--)
 			{
 				CTriangleVertexRefArray vertArray = triangle.GetPoints();
 				//app.LogMessage(L"Point Count: " + CString(vertArray.GetCount()));
-
 				//app.LogMessage(L"Point index: " + vertArray.GetItem(j).GetAsText());
 				XSI::TriangleVertex oVertex(vertArray.GetItem(j));
 				MATH::CVector3 oVertexPos = oVertex.GetPosition();
 
-				f << to_string(oVertexPos.GetX()) + " ";
-				f << to_string(oVertexPos.GetY()) + " ";
-				f << to_string(oVertexPos.GetZ()) + " ";
+				f << oVertexPos.GetX();
+				f << " ";
+				f << oVertexPos.GetY();
+				f << " ";
+				f << oVertexPos.GetZ();
+				f << " ";
 
 				//app.LogMessage(L"Position " + CString(i + j) + ": " + CString(oVertexPos.GetX()) + L", " + CString(oVertexPos.GetY()) + L", " + CString(oVertexPos.GetZ()));
-
-				MATH::CVector3 oVertexNormal = oVertex.GetNormal();
-
-				f << to_string(oVertexNormal.GetX()) + " ";
-				f << to_string(oVertexNormal.GetY()) + " ";
-				f << to_string(oVertexNormal.GetZ()) + " ";
-				//app.LogMessage(L"Normal: "+ CString(oVertexNormal.GetX())+L", "+CString(oVertexNormal.GetY())+L", "+CString(oVertexNormal.GetZ()));
-
-				if (sUVs.GetCount() > 0)
+				if (!isSolid)
 				{
-					for (int r = 0; r < 1; r++)
-					{
-						ClusterProperty uvProp = sUVs[r];
-						CFloatArray uvValues;
-						uvProp.GetValues(uvValues);
-						int nodeId = triNodeIds[i * 3 + j];
+					MATH::CVector3 oVertexNormal = oVertex.GetNormal();
 
+					f << oVertexNormal.GetX();
+					f << " ";
+					f << oVertexNormal.GetY();
+					f << " ";
+					f << oVertexNormal.GetZ();
+					f << " ";
+					//app.LogMessage(L"Normal: "+ CString(oVertexNormal.GetX())+L", "+CString(oVertexNormal.GetY())+L", "+CString(oVertexNormal.GetZ()));
+
+					if (uvCount > 0)
+					{
+						int nodeId = triNodeIds[i * 3 + j];
 						float u = uvValues[nodeId * 3 + 0];
 						float v = 1 - uvValues[nodeId * 3 + 1];
 
 						//app.LogMessage(L"u: "+ CString(u));
 						//app.LogMessage(L"v: "+ CString(v));
 
-						f << to_string(u) + " ";
-						f << to_string(v) + " ";
+						f << u;
+						f << " ";
+						f << v;
 					}
 				}
-				f << "\n";
+				f << endl;
 				//app.LogMessage(L"clsArray[nCls][(i*3+2)-j]: "+CString(clsArray[nCls][2]));
 			}
 		}
@@ -241,63 +221,29 @@ namespace Mitsuba
 			if (!triangle.IsValid()) continue;
 
 			f << "3 ";
-			f << to_string(triangle.GetIndex() * 3) + " ";
-			f << to_string(triangle.GetIndex() * 3 + 1) + " ";
-			f << to_string(triangle.GetIndex() * 3 + 2) + " ";
-			f << "\n";
+			f << triangle.GetIndex() * 3;
+			f << " ";
+			f << triangle.GetIndex() * 3 + 1;
+			f << " ";
+			f << triangle.GetIndex() * 3 + 2;
+			f << endl;
 		}
 
 		f.close();
 	}
+}
 
-	void Mesh::ExportPlyMesh02(X3DObject& obj, CString exportPath, CString fileName)
+namespace std
+{
+	ofstream& operator<<(ofstream& a_stream, const char* a_str)
 	{
-		ofstream f(CUtils::BuildPath(exportPath, fileName).GetAsciiString(), ios::out | ios::binary);
-
-		f << "ply\n";
-		f << "format ascii 1.0\n";
-
-		CPointRefArray points = obj.GetActivePrimitive().GetGeometry().GetPoints();
-		int vertexcount = points.GetCount();
-		f << "element vertex " + to_string(vertexcount) + "\n";
-		f << "property float32 x\n";
-		f << "property float32 y\n";
-		f << "property float32 z\n";
-
-		CFacetRefArray facets = obj.GetActivePrimitive().GetGeometry().GetFacets();
-		int facescount = facets.GetCount();
-		f << "element face " + to_string(facescount) + "\n";
-		f << "property list uint8 int32 vertex_index\n";
-		f << "end_header\n";
-
-		for (int i = 0; i < vertexcount; i++)
+		if (a_str)
 		{
-			XSI::Point point(points.GetItem(i));
-			if (!point.IsValid()) continue;
-
-			f << to_string(point.GetPosition().GetX()) + " " + to_string(point.GetPosition().GetY()) + " " + to_string(point.GetPosition().GetZ()) + "\n";
+			size_t len = ::strlen(a_str);
+			if (len > 0)
+				a_stream.write(a_str, len + 1);
 		}
 
-		for (int i = 0; i < facescount; i++)
-		{
-			XSI::Facet facet(facets.GetItem(i));
-			if (!facet.IsValid()) continue;
-
-			CPointRefArray facePoints = facet.GetPoints();
-			f << to_string(facePoints.GetCount()) + " ";
-
-			for (int p = 0; p < facePoints.GetCount(); p++)
-			{
-				XSI::Point point(facePoints.GetItem(p));
-				if (!point.IsValid()) continue;
-
-				f << to_string(point.GetIndex()) + " ";
-			}
-
-			f << "\n";
-		}
-
-		f.close();
+		return a_stream;
 	}
-
 }

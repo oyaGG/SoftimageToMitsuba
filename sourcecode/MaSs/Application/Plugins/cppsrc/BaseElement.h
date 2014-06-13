@@ -48,8 +48,10 @@ namespace Mitsuba
 		float ColorToFloat(Parameter& param);
 		string VectorToString(MATH::CVector3f vector);
 
-		XSI::Shader FindShaderOnPort(CRefArray shaders, CString targetPortName, bool isMShader);
-		XSI::ImageClip2 FindImageClipOnPort(CRefArray imageclips, CString targetPortName);
+		XSI::Shader FindShaderOnPort(XSI::Shader& shaderParam, CString targetPortName, bool isMShader);
+		XSI::Shader FindShaderOnPort(XSI::Material& mat, CString targetPortName, bool isMShader);		
+
+		XSI::ImageClip2 FindImageClipOnPort(XSI::Shader& shaderParam, CString targetPortName);
 
 		bool isVisibility(X3DObject& obj);
 
@@ -60,6 +62,10 @@ namespace Mitsuba
 		XMLElement* WriteElementScale(XMLDocument* doc, XSI::X3DObject& object);
 		XMLElement* WriteRefMatSegment(XMLDocument* doc, X3DObject& mesh, XSI::Material& mat, bool isSSSName);
 		XMLElement* WriteSpectrumElement(XMLDocument* doc, const char* paramName, XSI::Shader& shader);
+		XMLElement* WriteSpectrumSegment(XMLDocument* doc, Parameter& param);
+
+	private:
+		XSI::Shader FindShaderOnPort(CRefArray& shaders, CString targetPortName, bool isMShader);
 	};
 }
 
