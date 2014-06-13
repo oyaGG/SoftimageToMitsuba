@@ -64,6 +64,7 @@
     <ClCompile Include="BaseElement.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Constants.cpp" />
+    <ClCompile Include="ExportPLY.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="MaSsExport.cpp" />
     <ClCompile Include="MaSsExport_plugin.cpp" />
@@ -79,6 +80,7 @@
     <ClInclude Include="BaseElement.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="ExportPLY.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
@@ -86,9 +88,6 @@
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="tinyxml2.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cppsrc.licenseheader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

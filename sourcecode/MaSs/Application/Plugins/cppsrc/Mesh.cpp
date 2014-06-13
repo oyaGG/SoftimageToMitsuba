@@ -65,7 +65,9 @@ namespace Mitsuba
 
 				if (!isSubdivide)
 				{
-					ExportPlyMesh(mesh, exportPath, mesh.GetFullName() + L".ply", isSolid);
+					Mitsuba::ExportPLY* exportPly = new Mitsuba::ExportPLY();
+					exportPly->ExportPlyMeshBinary(mesh, exportPath, mesh.GetFullName() + L".ply", isSolid);
+					delete exportPly;
 				}
 				else
 				{
@@ -116,134 +118,5 @@ namespace Mitsuba
 		return false;
 	}
 
-	void Mesh::ExportPlyMesh(X3DObject& obj, CString exportPath, CString fileName, bool isSolid)
-	{
-		ofstream f(CUtils::BuildPath(exportPath, fileName).GetAsciiString(), ios::out | ios::binary);
-
-		f << "ply" << endl;
-		f << "format ascii 1.0" << endl;
-
-		Geometry oGeom = obj.GetActivePrimitive().GetGeometry();
-		CTriangleRefArray tris = oGeom.GetTriangles();
-		int vertexcount = tris.GetCount() * 3;
-		f << "element vertex " + to_string(vertexcount) << endl;
-		f << "property float32 x" << endl;
-		f << "property float32 y" << endl;
-		f << "property float32 z" << endl;
-
-		if (!isSolid)
-		{
-			f << "property float32 nx" << endl;
-			f << "property float32 ny" << endl;
-			f << "property float32 nz" << endl;
-		}
-
-		CGeometryAccessor ga = PolygonMesh(oGeom).GetGeometryAccessor();
-		CRefArray sUVs = ga.GetUVs();
-		LONG uvCount = sUVs.GetCount();
-
-		ClusterProperty uvProp;
-		CFloatArray uvValues;
-
-		if (!isSolid && uvCount > 0)
-		{
-			uvProp = sUVs[0];
-			uvProp.GetValues(uvValues);
-
-			f << "property float32 s" << endl;
-			f << "property float32 t" << endl;
-		}
-
-		CTriangleRefArray triangles = obj.GetActivePrimitive().GetGeometry().GetTriangles();
-		int trianglecount = triangles.GetCount();
-		f << "element face " + to_string(trianglecount) << endl;
-		f << "property list uint8 int32 vertex_index" << endl;
-		f << "end_header" << endl;
-
-		//app.LogMessage(L"Tris Count: " + CString(triangles.GetCount()));
-
-		CLongArray triNodeIds;
-		ga.GetTriangleNodeIndices(triNodeIds);
-
-		for (int i = 0; i < triangles.GetCount(); i++)
-		{
-			XSI::Triangle triangle(triangles.GetItem(i));
-			for (int j = 2; j >= 0; j--)
-			{
-				CTriangleVertexRefArray vertArray = triangle.GetPoints();
-				//app.LogMessage(L"Point Count: " + CString(vertArray.GetCount()));
-				//app.LogMessage(L"Point index: " + vertArray.GetItem(j).GetAsText());
-				XSI::TriangleVertex oVertex(vertArray.GetItem(j));
-				MATH::CVector3 oVertexPos = oVertex.GetPosition();
-
-				f << oVertexPos.GetX();
-				f << " ";
-				f << oVertexPos.GetY();
-				f << " ";
-				f << oVertexPos.GetZ();
-				f << " ";
-
-				//app.LogMessage(L"Position " + CString(i + j) + ": " + CString(oVertexPos.GetX()) + L", " + CString(oVertexPos.GetY()) + L", " + CString(oVertexPos.GetZ()));
-				if (!isSolid)
-				{
-					MATH::CVector3 oVertexNormal = oVertex.GetNormal();
-
-					f << oVertexNormal.GetX();
-					f << " ";
-					f << oVertexNormal.GetY();
-					f << " ";
-					f << oVertexNormal.GetZ();
-					f << " ";
-					//app.LogMessage(L"Normal: "+ CString(oVertexNormal.GetX())+L", "+CString(oVertexNormal.GetY())+L", "+CString(oVertexNormal.GetZ()));
-
-					if (uvCount > 0)
-					{
-						int nodeId = triNodeIds[i * 3 + j];
-						float u = uvValues[nodeId * 3 + 0];
-						float v = 1 - uvValues[nodeId * 3 + 1];
-
-						//app.LogMessage(L"u: "+ CString(u));
-						//app.LogMessage(L"v: "+ CString(v));
-
-						f << u;
-						f << " ";
-						f << v;
-					}
-				}
-				f << endl;
-				//app.LogMessage(L"clsArray[nCls][(i*3+2)-j]: "+CString(clsArray[nCls][2]));
-			}
-		}
-
-		for (int i = 0; i < triangles.GetCount(); i++)
-		{
-			XSI::Triangle triangle(triangles.GetItem(i));
-			if (!triangle.IsValid()) continue;
-
-			f << "3 ";
-			f << triangle.GetIndex() * 3;
-			f << " ";
-			f << triangle.GetIndex() * 3 + 1;
-			f << " ";
-			f << triangle.GetIndex() * 3 + 2;
-			f << endl;
-		}
-
-		f.close();
-	}
 }
 
-namespace std
-{
-	ofstream& operator<<(ofstream& a_stream, const char* a_str)
-	{
-		if (a_str)
-		{
-			size_t len = ::strlen(a_str);
-			if (len > 0)
-				a_stream.write(a_str, len + 1);
-		}
-
-		return a_stream;
-	}
-}
